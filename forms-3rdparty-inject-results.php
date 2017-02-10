@@ -20,13 +20,14 @@ class Forms3rdpartyInjectResults {
 	function init() {
 		// prepare for attachment -- use this as a convenient hook to access $services and remember $submission
 		add_action(Forms3rdPartyIntegration::$instance->N('get_submission'), array(&$this, 'attach'), 100, 3);
+
 		// configure whether to attach or not, how
 		add_filter(Forms3rdPartyIntegration::$instance->N('service_settings'), array(&$this, 'service_settings'), 10, 3);
 	}
 
 	#region ---------- ui -------------
 
-	const FIELD = 'p2';
+	const FIELD = 'i2';
 
 	public function service_settings($eid, $P, $entity) {
 		$services = [];
@@ -36,15 +37,13 @@ class Forms3rdpartyInjectResults {
 				$services []= array('id' => $sid, 'title' => isset($service['name']) ? $service['name'] : 'unknown-form');
 		}
 		?>
-		<fieldset class="postbox"><legend class="hndle"><span><?php _e('Secondary Post', $P); ?></span></legend>
+		<fieldset class="postbox"><legend class="hndle"><span><?php _e('Inject Results', $P); ?></span></legend>
 			<div class="inside">
 				<?php $field = self::FIELD; ?>
 				<div class="field">
-					<label for="<?php echo $field, '-', $eid ?>"><?php _e('Secondary Post', $P); ?></label>
-					<?php
-					Forms3rdPartyIntegration::$instance->form_select_input($services, $eid, isset($entity[$field]) ? $entity[$field] : false, $field);
-					?>
-					<em class="description"><?php _e('Choose one or more services to perform afterwards.  The response from the previous service will be made available to the mapping as part of the submission.', $P); ?></em>
+					<label for="<?php echo $field, '-', $eid ?>"><?php _e('Include which results?', $P); ?></label>
+					<textarea name="<?php echo $P, "[$eid][$field]"?>" class="text wide fat" id="<?php echo $field, '-', $eid ?>"><?php if(isset($entity[$field])) echo esc_html($entity[$field]) ?></textarea>
+					<em class="description"><?php _e('Enter the list of result values (given in url-nested form), one per line, to include in the response.', $P); ?></em>
 				</div>
 			</div>
 		</fieldset>
@@ -52,36 +51,71 @@ class Forms3rdpartyInjectResults {
 	}
 	#endregion ---------- ui -------------
 
+	/**
+	 * Attach the rest of the hooks if we're supposed to; also remembers what's available here
+	 * @param $submission
+	 * @param $form
+	 * @param $service
+	 * @return mixed
+	 */
 	function attach($submission, $form, $service) {
+		## _log($service);
+
 		if(!isset($service[self::FIELD]) || empty($service[self::FIELD])) return $submission;
 
-		add_action(Forms3rdPartyIntegration::$instance->N('use_submission'), array(&$this, 'attach2'), 100, 3);
+		// hook elsewhere
 
-		$reposts = (array) $service[self::FIELD];
+		// needed to remember the response; not service-specific (postagain?) but should be fine for where we end up
+		add_action(Forms3rdPartyIntegration::$instance->N('service'), array(&$this, 'remember'), 100, 3);
+		// do the actual result injection
+		add_action(Forms3rdPartyIntegration::$instance->N('remote_success'), array(&$this, 'inject'), 100, 3);
 
-		// save for later; should be okay in multi-resend scenario since it traverses services in order
+		// save a reference in case it's easier to inject
 		$this->submission = $submission;
-		$this->form = $form;
-		$this->reposts = $reposts;
+
+		## _log(__CLASS__, __FUNCTION__);
 
 		return $submission;
 	}
 
 	/**
-	 * Actually attach followup, secondary post only to this `service_a` hook
-	 * @param bool $use_this_form filter return value
-	 * @param $submission user submission
-	 * @param $sid the current form's id
-	 * @return mixed
+	 * Remember the response so we can use it in the right place
+	 * @param $response
+	 * @param $ref
 	 */
-	function attach2($use_this_form, $submission, $sid) {
-		if(!$use_this_form) return $use_this_form;
+	function remember($response, $ref, $sid) {
+		## _log(__CLASS__, __FUNCTION__);
 
-		// so we can reuse the relevant parts not available to the `service_a` hook
-		// add_filter(Forms3rdPartyIntegration::$instance->N('service_filter_post_'.$eid), array(&$this, 'remember'));
-		// actually perform the secondary post given the response
-		add_action(Forms3rdPartyIntegration::$instance->N('service_a'.$sid), array(&$this, 'resend'), 10, 2);
-		return $use_this_form;
+		$this->response = $response;
+	}
+
+	function inject($form, $ref, $service) {
+		## _log(__CLASS__, __FUNCTION__);
+
+		$reposts = explode("\n", $service[self::FIELD]); // trim later
+
+		$resultsArgs = $this->parse($this->response);
+
+		_log($reposts, $resultsArgs);
+
+		// get each repost from the results
+		$extracted = array();
+		foreach($reposts as $repost) {
+
+			$keys = explode('/', trim($repost));
+
+			$resarg = $resultsArgs;
+			foreach($keys as $k) {
+				$resarg = $resarg[$k];
+			}
+			$extracted[$repost] = $resarg;
+		}
+
+		// just in case there's some dynamic stuff not already part of the form submission
+		$extracted += $this->submission;
+
+		// inject each repost into $form submission
+		_log('extracted', $extracted, $form);
 	}
 
 	function resend($body, $param_ref) {
