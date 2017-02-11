@@ -90,19 +90,17 @@ class Forms3rdpartyInjectResults {
 	}
 
 	function inject($form, $ref, $service) {
-		## _log(__CLASS__, __FUNCTION__);
-
-		$reposts = explode("\n", $service[self::FIELD]); // trim later
+		$reposts = array_map('trim', explode("\n", $service[self::FIELD]));
 
 		$resultsArgs = $this->parse($this->response);
 
-		_log($reposts, $resultsArgs);
+		### _log(__CLASS__ . '.' . __FUNCTION__ . ':' . __LINE__, $reposts, $resultsArgs);
 
 		// get each repost from the results
 		$extracted = array();
 		foreach($reposts as $repost) {
 
-			$keys = explode('/', trim($repost));
+			$keys = explode('/', $repost);
 
 			$resarg = $resultsArgs;
 			foreach($keys as $k) {
@@ -117,7 +115,7 @@ class Forms3rdpartyInjectResults {
 		// inject each repost into $form submission
 		$form = apply_filters(Forms3rdPartyIntegration::$instance->N('inject'), $form, $extracted);
 
-		_log('extracted', $extracted, $form);
+		_log(__CLASS__ . '.' . __FUNCTION__ . ':' . __LINE__, 'extracted', $extracted, $form);
 
 
 		return $form;
