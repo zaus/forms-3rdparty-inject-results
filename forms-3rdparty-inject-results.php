@@ -115,9 +115,17 @@ class Forms3rdpartyInjectResults {
 		$extracted += $this->submission;
 
 		// inject each repost into $form submission
+		$form = apply_filters(Forms3rdPartyIntegration::$instance->N('inject'), $form, $extracted);
+
 		_log('extracted', $extracted, $form);
+
+
+		return $form;
 	}
 
+
+
+	/// OBSOLETE -- retaining as example for now
 	function resend($body, $param_ref) {
 		extract($param_ref); //array('success'=>false, 'errors'=>false, 'attach'=>'', 'message' => '')
 
