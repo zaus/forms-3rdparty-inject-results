@@ -43,7 +43,7 @@ class Forms3rdpartyInjectResults {
 				<div class="field">
 					<label for="<?php echo $field, '-', $eid ?>"><?php _e('Include which results?', $P); ?></label>
 					<textarea name="<?php echo $P, "[$eid][$field]"?>" class="text wide fat" id="<?php echo $field, '-', $eid ?>"><?php if(isset($entity[$field])) echo esc_html($entity[$field]) ?></textarea>
-					<em class="description"><?php _e('Enter the list of result values (given in url-nested form), one per line, to include in the response.', $P); ?></em>
+					<em class="description"><?php echo sprintf(__('Enter the list of result values (given in url-nested form), one per line, to include in the response.  Provide field aliases with %s', $P), '<code>response\\key=alias</code>'); ?></em>
 				</div>
 			</div>
 		</fieldset>
@@ -100,13 +100,23 @@ class Forms3rdpartyInjectResults {
 		$extracted = array();
 		foreach($reposts as $repost) {
 
+			// were we given an alias?
+			$alias = explode('=', $repost);
+			$repost = reset($alias);
+			$alias = end($alias);
+
 			$keys = explode('/', $repost);
 
 			$resarg = $resultsArgs;
+			// only set if the desired (sub)key is present in the results
+			$isPresent = false;
+			// walk through nested keys
 			foreach($keys as $k) {
+				$isPresent = isset($resarg[$k]);
+				if(!$isPresent) break;
 				$resarg = $resarg[$k];
 			}
-			$extracted[$repost] = $resarg;
+			if($isPresent) $extracted[$alias] = $resarg;
 		}
 
 		// just in case there's some dynamic stuff not already part of the form submission
@@ -115,36 +125,9 @@ class Forms3rdpartyInjectResults {
 		// inject each repost into $form submission
 		$form = apply_filters(Forms3rdPartyIntegration::$instance->N('inject'), $form, $extracted);
 
-		_log(__CLASS__ . '.' . __FUNCTION__ . ':' . __LINE__, 'extracted', $extracted, $form);
-
+		### _log(__CLASS__ . '.' . __FUNCTION__ . ':' . __LINE__, 'extracted', $extracted, $form);
 
 		return $form;
-	}
-
-
-
-	/// OBSOLETE -- retaining as example for now
-	function resend($body, $param_ref) {
-		extract($param_ref); //array('success'=>false, 'errors'=>false, 'attach'=>'', 'message' => '')
-
-		$f3p = Forms3rdPartyIntegration::$instance;
-		$debug = $f3p->get_settings();
-
-		$resultsArgs = $this->parse($body);
-		$submission = $resultsArgs + $this->submission;
-		### _log('f3p-again--'.__FUNCTION__, $body, $resultsArgs, $submission);
-
-		foreach($this->reposts as $sid) {
-			$service = $f3p->get_services()[$sid];
-			### _log('f3p-again--'.__FUNCTION__, $sid, $service);
-			$sendResult = $f3p->send($submission, $this->form, $service, $sid, $debug);
-			if($sendResult === Forms3rdPartyIntegration::RET_SEND_STOP || $sendResult === Forms3rdPartyIntegration::RET_SEND_SKIP) return;
-
-			$response = $sendResult['response'];
-			$post_args = $sendResult['post_args'];
-
-			return $f3p->handle_results($submission, $response, $post_args, $this->form, $service, $sid, $debug);
-		}
 	}
 
 	function parse($body) {

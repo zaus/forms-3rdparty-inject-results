@@ -8,8 +8,8 @@ if(empty($type)) {
 }
 
 // echo $type, "\n";
-// alter keys so it will look different dor echo
-$prerequest = $_GET + $_POST;
+// alter keys so it will look different for echo
+$prerequest = $_POST + $_GET;
 
 $raw = file_get_contents("php://input");
 
@@ -20,8 +20,16 @@ if(strpos($type, 'json') !== false) {
 // probably do the same for xml, but too much trouble
 
 $request = array();
+// dynamically modify the 'request'
+$dyn = array('prefix' => null, 'suffix' => null);
+foreach($dyn as $k => &$o)
+	if(isset($prerequest[$k])) {
+		$o = $prerequest[$k];
+		unset($prerequest[$k]);
+	}
+
 foreach($prerequest as $k => $v) {
-	$request[ 'req-' . $k ] = $v;
+	$request[ 'req-' . $k ] = $dyn['prefix'] . $v . $dyn['suffix'];
 }
 
 // print_r(array('req' => $req, 'raw' => $raw));
