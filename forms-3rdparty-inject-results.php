@@ -12,6 +12,8 @@ Changelog:
 	0.2	working version (at least, with GF) + readme
 */
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 class Forms3rdpartyInjectResults {
 
 	function __construct() {
