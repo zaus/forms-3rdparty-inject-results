@@ -60,7 +60,7 @@ class Forms3rdpartyInjectResults {
 	 * @return mixed
 	 */
 	function attach($submission, $form, $service) {
-		## _log($service);
+		### _log(__CLASS__, array('service' => $service['name'], 'inject' => $service[self::FIELD], 'submission' => $submission));
 
 		if(!isset($service[self::FIELD]) || empty($service[self::FIELD])) return $submission;
 
