@@ -13,9 +13,9 @@ class F3pInjectTester {
 		return getallheaders();
 	}
 
-	public function test($_SERVER, $_POST, $_GET, $raw) {
+	public function test($server, $post, $get, $raw) {
 
-		$type = $_SERVER["CONTENT_TYPE"];
+		$type = $server["CONTENT_TYPE"];
 		if(empty($type)) {
 			$headers = $this->get_headers();
 			if(isset($headers['Accept'])) $type = $headers['Accept'];
@@ -24,7 +24,7 @@ class F3pInjectTester {
 
 		// echo $type, "\n";
 		// alter keys so it will look different for echo
-		$prerequest = $_POST + $_GET;
+		$prerequest = $post + $get;
 
 		if(strpos($type, 'json') !== false) {
 			// also attach decoded raw body
@@ -88,6 +88,25 @@ class F3pInjectTester {
 			}
 		}
 	}
+
+	public static function get_local_ip() {
+		if(isset($_SERVER['SERVER_ADDR'])) {
+			$name = $_SERVER['SERVER_ADDR'];
+			// but...testing locally is blank... http://stackoverflow.com/questions/30759362/php-variable-serverserver-addr-is-blank-when-using-crontab
+			if (!empty($name)) return $name;
+		}
+
+		// the following might be the local ip, not public ip? but it could be all we have...
+		if(!function_exists('socket_create')) return getHostByName(getHostName());
+
+		// http://stackoverflow.com/a/36604437/1037948
+
+		$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+		socket_connect($sock, "8.8.8.8", 53);
+		socket_getsockname($sock, $name); // $name passed by reference
+
+		return $name;
+	}
 }
 
 
@@ -95,11 +114,13 @@ class F3pInjectTester {
 
 // same ip?
 $visitor = $_SERVER['REMOTE_ADDR'];
-$me = $_SERVER['REMOTE_ADDR'];
+$me = F3pInjectTester::get_local_ip();
 
-if($visitor == $me) new F3iGfResend();
+if($visitor == $me) new F3pInjectTester();
 else {
-	echo json_encode(array('me' => $me, 'visitor' => $visitor, 'error' => 'rejected'));
+	echo json_encode(array(
+		// 'me' => $me, 'visitor' => $visitor,
+		'error' => 'rejected'));
 	exit;
 }
 
