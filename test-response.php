@@ -63,6 +63,7 @@ class F3pInjectTester {
 						$object->addChild($key, $value);
 					}
 				}
+				return $object;
 			}
 
 			if(empty($raw)) $raw = '<request />';
