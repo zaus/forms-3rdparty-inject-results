@@ -33,12 +33,6 @@ class Forms3rdpartyInjectResults {
 	const FIELD = 'i2';
 
 	public function service_settings($eid, $P, $entity) {
-		$services = [];
-		foreach(Forms3rdPartyIntegration::$instance->get_services() as $sid => $service) {
-			// but NOT this one
-			if($eid != $sid)
-				$services []= array('id' => $sid, 'title' => isset($service['name']) ? $service['name'] : 'unknown-form');
-		}
 		?>
 		<fieldset class="postbox"><legend class="hndle"><span><?php _e('Inject Results', $P); ?></span></legend>
 			<div class="inside">
