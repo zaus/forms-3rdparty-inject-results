@@ -31,6 +31,7 @@ class Forms3rdpartyInjectResults {
 	#region ---------- ui -------------
 
 	const FIELD = 'i2';
+	const DELIM = '/';
 
 	public function service_settings($eid, $P, $entity) {
 		?>
@@ -40,7 +41,7 @@ class Forms3rdpartyInjectResults {
 				<div class="field">
 					<label for="<?php echo $field, '-', $eid ?>"><?php _e('Include which results?', $P); ?></label>
 					<textarea name="<?php echo $P, "[$eid][$field]"?>" class="text wide fat" id="<?php echo $field, '-', $eid ?>"><?php if(isset($entity[$field])) echo esc_html($entity[$field]) ?></textarea>
-					<em class="description"><?php echo sprintf(__('Enter the list of result values (given in url-nested form), one per line, to include in the response.  Provide field aliases with %s', $P), '<code>response\\key=alias</code>'); ?></em>
+					<em class="description"><?php echo sprintf(__('Enter the list of result values (given in url-nested form), one per line, to include in the response.  Provide field aliases with %s', $P), "<code>response" . self::DELIM . "key=alias</code>"); ?></em>
 				</div>
 			</div>
 		</fieldset>
@@ -97,23 +98,15 @@ class Forms3rdpartyInjectResults {
 		$extracted = array();
 		foreach($reposts as $repost) {
 
-			// were we given an alias?
+			// were we given an alias? (optional)
 			$alias = explode('=', $repost);
 			$repost = reset($alias);
 			$alias = end($alias);
 
-			$keys = explode('/', $repost);
-
-			$resarg = $resultsArgs;
-			// only set if the desired (sub)key is present in the results
-			$isPresent = false;
-			// walk through nested keys
-			foreach($keys as $k) {
-				$isPresent = isset($resarg[$k]);
-				if(!$isPresent) break;
-				$resarg = $resarg[$k];
+			// only set if the desired key is present in the results
+			if(isset($resultsArgs[$repost])) {
+				$extracted[$alias] = $resultsArgs[$repost];
 			}
-			if($isPresent) $extracted[$alias] = $resarg;
 		}
 
 		// just in case there's some dynamic stuff not already part of the form submission
@@ -193,7 +186,7 @@ class Forms3rdpartyInjectResults {
 		return $result;
 	}
 
-	function flattenWithKeys(array $array, $childPrefix = '/', $root = '', $result = array()) {
+	function flattenWithKeys(array $array, $childPrefix = self::DELIM, $root = '', $result = array()) {
 		// https://gist.github.com/kohnmd/11197713#gistcomment-1895523
 
 		foreach($array as $k => $v) {
