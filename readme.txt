@@ -3,7 +3,7 @@ Contributors: zaus
 Donate link: http://drzaus.com/donate
 Tags: contact form, form, CRM, mapping, 3rd-party service, services, remote request, forms-3rdparty, inject response, inject results
 Requires at least: 3.0
-Tested up to: 4.7.2
+Tested up to: 5.2.2
 Stable tag: trunk
 License: GPLv2 or later
 
@@ -28,19 +28,15 @@ Allows you to include results from a [Forms 3rdparty Integration](http://wordpre
 
 = How does it add the response values? =
 
-Using the provided endpoint example [test-response.php](http://yoursite.com/plugins/forms-3rdparty-inject-results/test-response.php) will "echo" back your 3rdparty submission with keys altered to be prefixed with 'req-'.  So if your submission was
+If you have an endpoint [test-response.php](http://yoursite.com/plugins/forms-3rdparty-inject-results/test-response.php) that will "echo" back your 3rdparty submission with keys altered to be prefixed with 'req-', then if your submission was
 
 	{ name: { first: "FirstName", last: "LastName" }, email: "myemail@email.com", etc: "foobar" }
 
 The response would be flattened and prefixed to
 
-	{ "req-name\first": "FirstName", "req-name\last": "LastName", "req-email": "myemail@email.com", "req-etc": "foobar" }
+	{ "req-name/first": "FirstName", "req-name/last": "LastName", "req-email": "myemail@email.com", "req-etc": "foobar" }
 
-You would then inject `req-name\first` or `req-etc`.
-
-To ensure that you're dynamically overwriting existing form submission values, you can use the test response endpoint with _value_ prefix/suffix like [test-response.php?prefix=1234&suffix=4321](http://yoursite.com/plugins/forms-3rdparty-inject-results/test-response.php?prefix=1234&suffix=4321), which would change the flattened response to
-
-		{ "req-name\first": "1234FirstName4321", "req-name\last": "1234LastName4321", "req-email": "1234myemail@email.com4321", "req-etc": "1234foobar4321" }
+You would then inject `req-name/first` or `req-etc`.
 
 = What are some XML/JSON examples? =
 
@@ -69,6 +65,10 @@ N/A.
 
 == Changelog ==
 
+= 0.3 =
+* fix: inconsistent nested key delimiters, now expecting '/'
+* removed testing endpoint per WP Security request (see archives for example)
+
 = 0.2 =
 * confirmed with GF at least
 
@@ -78,4 +78,5 @@ IT HAS BEGUN
 
 == Upgrade Notice ==
 
-N/A.
+= 0.3 =
+Delimiter format handling has changed.  May be a breaking change if you were using it "wrong" (according to how it was previously described).

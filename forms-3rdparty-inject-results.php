@@ -5,11 +5,12 @@ Plugin Name: Forms: 3rd-Party Inject Results
 Plugin URI: https://github.com/zaus/forms-3rdparty-inject-results
 Description: Attach the results to the original submission
 Author: zaus
-Version: 0.2
+Version: 0.3
 Author URI: http://drzaus.com
 Changelog:
 	0.1	it begins
 	0.2	working version (at least, with GF) + readme
+	0.3 fix delimiter, removed testing endpoint
 */
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
